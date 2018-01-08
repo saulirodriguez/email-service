@@ -1,0 +1,25 @@
+{
+  "name": "email-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saulirodriguez/email-service.git"
+  },
+  "author": "Sauli Rodriguez",
+  "license": "ISC",
+  "dependencies": {
+    "amqplib": "^0.5.1",
+    "nodemailer": "^3.0.2"
+  },
+  "bugs": {
+    "url": "https://github.com/saulirodriguez/email-service/issues"
+  },
+  "homepage": "https://github.com/saulirodriguez/email-service#readme"
+}
+
