@@ -1,6 +1,12 @@
-const config = require('./config.json');
+const config = require('./config');
 const nodemailer = require('nodemailer');
 const amqplib = require('amqplib/callback_api');
+
+const tries = {
+	1: 'First',
+	2: 'Second',
+	3: 'Third'
+};
 
 const transport = nodemailer.createTransport({
     service: 'Gmail',
@@ -10,47 +16,60 @@ const transport = nodemailer.createTransport({
 const mailOptions = {
     from: `Sauli Rodriguez <${config.sender.user}>`,
     to: 'sauli6692@gmail.com',
+    
     subject: 'TO DO List'
 };
 
+let connectionsCount = 1;
 
-amqplib.connect(config.rabbitmq.host, (err, connection) => {
-    if (err) {
-        console.error(err.stack);
-        return process.exit(1);
-    }
+const connectToRabbitmq = () => {
+	amqplib.connect(config.rabbitmqURL, (err, connection) => {
+	    if (err) {
+	    	if (connectionsCount < 3) {
+	    		console.log('Connection failed: ' + tries[connectionsCount] + ' try');
+				setTimeout(() => connectToRabbitmq(), 20000);
+			} else {
+				console.log('CONNECTION FAILED', err.stack);
+				return process.exit(1);
+			}
+	    } else {
+		    connection.createChannel((err, channel) => {
+				if (err) {
+				    console.error(err.stack);
+				    return process.exit(1);
+				}
 
-    connection.createChannel((err, channel) => {
-        if (err) {
-            console.error(err.stack);
-            return process.exit(1);
-        }
-
-        channel.assertQueue(config.rabbitmq.queue, {
-            durable: false
-        }, err => {
-            if (err) {
-                console.error(err.stack);
-                return process.exit(1);
-            }
-
-            console.log('Listening...');
-            channel.prefetch(config.rabbitmq.prefetch);
-
-            channel.consume(config.rabbitmq.queue, data => {
-                if (data === null) {
-                    return;
-                }
-                mailOptions.text = data;
-                mailOptions.html = `<b> ${data} <b>`;
-                transport.sendMail(mailOptions, (error, info) => {
-				    if (error) {
-				        console.log(error);
+				channel.assertQueue(config.rabbitmq.queue, {
+				    durable: false
+				}, err => {
+				    if (err) {
+						console.error(err.stack);
+						return process.exit(1);
 				    }
-				    console.log(`Message sent: ${info.response}`);
-				    channel.ack(data);
+
+				    console.log('Listening...');
+				    channel.prefetch(config.rabbitmq.prefetch);
+
+				    channel.consume(config.rabbitmq.queue, data => {
+						if (data === null) {
+						    return;
+						}
+						mailOptions.text = data;
+						mailOptions.html = `<b> ${data} <b>`;
+						console.log('MESSAGE', data);
+						transport.sendMail(mailOptions, (error, info) => {
+						    if (error) {
+								console.log(error);
+						    }
+						    console.log(`Message sent: ${info.response}`);
+						    channel.ack(data);
+						});
+				    });
 				});
-            });
-        });
-    });
-});
+			});
+	    }
+
+	});
+}
+
+connectToRabbitmq();
