@@ -26,7 +26,7 @@ const connectToRabbitmq = () => {
 	amqplib.connect(config.rabbitmqURL, (err, connection) => {
 	    if (err) {
 	    	if (connectionsCount < 3) {
-	    		console.log('Connection failed: ' + tries[connectionsCount] + ' try');
+	    		console.log('Connection failed: ' + tries[connectionsCount++] + ' try');
 				setTimeout(() => connectToRabbitmq(), 20000);
 			} else {
 				console.log('CONNECTION FAILED', err.stack);
