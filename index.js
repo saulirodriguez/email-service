@@ -54,14 +54,16 @@ const connectToRabbitmq = () => {
 						if (data === null) {
 						    return;
 						}
-						mailOptions.text = data;
-						mailOptions.html = `<b> ${data} <b>`;
-						console.log('MESSAGE', data);
+						let message = data.content.toString('utf8');
+						mailOptions.text = message;
+						mailOptions.html = `<b> ${message} <b>`;
+						console.log('MESSAGE', message);
 						transport.sendMail(mailOptions, (error, info) => {
 						    if (error) {
 								console.log(error);
+								return;
 						    }
-						    console.log(`Message sent: ${info.response}`);
+						    console.log(`Message sent: ${info ? info.response: 'no message'}`);
 						    channel.ack(data);
 						});
 				    });
